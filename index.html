@@ -3,89 +3,150 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meine Schöne Website</title>
+    <title>Interaktive Ballsimulation mit RGB-Farbwechsel</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            height: 100vh;
             margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            background-color: #f4f4f4;
-            color: #333;
+            font-family: Arial, sans-serif;
         }
-
-        header {
-            background-color: #4CAF50;
-            color: white;
-            padding: 1em 0;
-            text-align: center;
+        #container {
+            position: relative;
+            border: 2px solid black;
+            border-radius: 50%;
+            overflow: hidden;
+            background-color: red;
         }
-
-        nav {
-            margin: 0 auto;
-            max-width: 800px;
-        }
-
-        nav ul {
-            list-style: none;
-            padding: 0;
-        }
-
-        nav ul li {
-            display: inline;
-            margin: 0 10px;
-        }
-
-        nav ul li a {
-            color: white;
-            text-decoration: none;
-            font-weight: bold;
-        }
-
-        .container {
-            max-width: 800px;
-            margin: 20px auto;
-            padding: 20px;
-            background-color: white;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-
-        footer {
-            background-color: #333;
-            color: white;
-            text-align: center;
-            padding: 1em 0;
+        .ball {
             position: absolute;
-            bottom: 0;
-            width: 100%;
+            border-radius: 50%;
+            background-color: blue; /* Standardfarbe für den Ball */
         }
-
-        @media (max-width: 600px) {
-            nav ul li {
-                display: block;
-                margin: 10px 0;
-            }
+        #controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
     </style>
 </head>
 <body>
-    <header>
-        <h1>Willkommen auf meiner Website</h1>
-        <nav>
-            <ul>
-                <li><a href="#home">Home</a></li>
-                <li><a href="#about">Über Uns</a></li>
-                <li><a href="#services">Dienstleistungen</a></li>
-                <li><a href="#contact">Kontakt</a></li>
-            </ul>
-        </nav>
-    </header>
-    <div class="container">
-        <h2>Hauptinhalt</h2>
-        <p>Dies ist der Hauptinhalt deiner Website. Du kannst hier Texte, Bilder, Videos oder andere Inhalte einfügen.</p>
+
+    <div id="container"></div>
+    <div id="controls">
+        <button onclick="addBall()">Ball hinzufügen</button>
+        <label>Kreisgröße: <input type="range" id="circleSize" min="200" max="600" value="400" onchange="updateCircleSize()"></label>
+        <label>Ballgröße: <input type="range" id="ballSize" min="10" max="50" value="20" onchange="updateBallSize()"></label>
+        <label>Geschwindigkeit: <input type="range" id="speed" min="1" max="10" value="5" onchange="updateSpeed()"></label>
+        <label>Gravitation: <input type="range" id="gravity" min="0.1" max="2" value="0.5" step="0.1" onchange="updateGravity()"></label>
+        <label>Farbwechselgeschwindigkeit: <input type="range" id="colorSpeed" min="1" max="20" value="10" onchange="updateColorSpeed()"></label>
+        <button onclick="reset()">Zurücksetzen</button>
     </div>
-    <footer>
-        <p>&copy; 2024 Meine Schöne Website</p>
-    </footer>
+
+    <script>
+        const container = document.getElementById('container');
+        let balls = [];
+        let circleSize = 400;
+        let ballSize = 20;
+        let speed = 5;
+        let gravity = 0.5;
+        let colorSpeed = 10;
+
+        function updateCircleSize() {
+            circleSize = document.getElementById('circleSize').value;
+            container.style.width = circleSize + 'px';
+            container.style.height = circleSize + 'px';
+        }
+
+        function updateBallSize() {
+            ballSize = document.getElementById('ballSize').value;
+            balls.forEach(ball => {
+                ball.element.style.width = ballSize + 'px';
+                ball.element.style.height = ballSize + 'px';
+            });
+        }
+
+        function updateSpeed() {
+            speed = document.getElementById('speed').value;
+        }
+
+        function updateGravity() {
+            gravity = document.getElementById('gravity').value;
+        }
+
+        function updateColorSpeed() {
+            colorSpeed = document.getElementById('colorSpeed').value;
+        }
+
+        function addBall() {
+            const ball = document.createElement('div');
+            ball.className = 'ball';
+            ball.style.width = ballSize + 'px';
+            ball.style.height = ballSize + 'px';
+            ball.style.left = Math.random() * (circleSize - ballSize) + 'px';
+            ball.style.top = Math.random() * (circleSize - ballSize) + 'px';
+            container.appendChild(ball);
+
+            const newBall = {
+                element: ball,
+                x: parseFloat(ball.style.left),
+                y: parseFloat(ball.style.top),
+                vx: (Math.random() - 0.5) * speed,
+                vy: (Math.random() - 0.5) * speed,
+                hue: Math.random() * 360
+            };
+
+            balls.push(newBall);
+        }
+
+        function reset() {
+            balls.forEach(ball => container.removeChild(ball.element));
+            balls = [];
+        }
+
+        function update() {
+            balls.forEach(ball => {
+                ball.vy += parseFloat(gravity);
+                ball.x += ball.vx;
+                ball.y += ball.vy;
+
+                const radius = circleSize / 2;
+                const distance = Math.sqrt((ball.x + ballSize / 2 - radius) ** 2 + (ball.y + ballSize / 2 - radius) ** 2);
+
+                if (distance + ballSize / 2 > radius) {
+                    const angle = Math.atan2(ball.y + ballSize / 2 - radius, ball.x + ballSize / 2 - radius);
+                    ball.x = radius + Math.cos(angle) * (radius - ballSize / 2) - ballSize / 2;
+                    ball.y = radius + Math.sin(angle) * (radius - ballSize / 2) - ballSize / 2;
+
+                    const normalX = (ball.x + ballSize / 2 - radius) / distance;
+                    const normalY = (ball.y + ballSize / 2 - radius) / distance;
+
+                    const dotProduct = ball.vx * normalX + ball.vy * normalY;
+                    ball.vx = ball.vx - 2 * dotProduct * normalX;
+                    ball.vy = ball.vy - 2 * dotProduct * normalY;
+
+                    // Vergrößern und Beschleunigen des Balls
+                    ball.element.style.width = (parseFloat(ball.element.style.width) * 1.1) + 'px';
+                    ball.element.style.height = (parseFloat(ball.element.style.height) * 1.1) + 'px';
+                    ball.vx *= 1.1;
+                    ball.vy *= 1.1;
+                }
+
+                ball.element.style.left = ball.x + 'px';
+                ball.element.style.top = ball.y + 'px';
+
+                // Aktualisiere die Farbe
+                ball.hue = (ball.hue + colorSpeed / 10) % 360;
+                ball.element.style.backgroundColor = `hsl(${ball.hue}, 100%, 50%)`;
+            });
+
+            requestAnimationFrame(update);
+        }
+
+        updateCircleSize();
+        update();
+    </script>
 </body>
 </html>
